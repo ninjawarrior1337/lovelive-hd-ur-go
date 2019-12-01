@@ -3,20 +3,22 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	NormalCard "lovelive-hd-ur/CardHandlers"
 	"lovelive-hd-ur/CardResponse"
+	NormalCard "lovelive-hd-ur/cardhandlers"
 	"net/http"
 	"net/url"
 	"os/exec"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 var cardJobs = make(chan struct{}, 2)
 
-func root(w http.ResponseWriter, r *http.Request) {
+func root(ctx *gin.Context) {
 	lsOut, _ := exec.Command("ls").Output()
 
-	fmt.Fprintln(w, string(lsOut))
+	fmt.Fprint(ctx.Writer, string(lsOut))
 }
 
 func ggg(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +47,11 @@ func cards(w http.ResponseWriter, r *http.Request) {
 	q.Add("ids", r.URL.Query().Get("ids"))
 	parsed.RawQuery = q.Encode()
 	fmt.Println(parsed)
-	resp, _ := http.Get(parsed.String())
+	resp, err := http.Get(parsed.String())
+	if err != nil {
+
+	}
+
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -53,8 +59,8 @@ func cards(w http.ResponseWriter, r *http.Request) {
 
 	card := NormalCard.New()
 
-	cardUrl, _ := url.Parse(*cardResponse.Results[0].CleanUrIdolized)
-	card.CardUrl = *cardUrl
+	cardURL, _ := url.Parse(*cardResponse.Results[0].CleanUrIdolized)
+	card.CardUrl = *cardURL
 	card.FileBaseName = strconv.FormatInt(*cardResponse.Results[0].ID, 10) + ".png"
 
 	if err := card.ProcessCard(); err != nil {
@@ -71,9 +77,13 @@ func cards(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", root)
-	http.HandleFunc("/ggg", ggg)
-	http.HandleFunc("/cards", cards)
+	router := gin.Default()
+	router.GET("/", root)
 
-	http.ListenAndServe(":5005", nil)
+	router.Run("0.0.0.0:5005")
+	// http.HandleFunc("/", root)
+	// http.HandleFunc("/ggg", ggg)
+	// http.HandleFunc("/cards", cards)
+
+	// http.ListenAndServe(":5005", nil)
 }

@@ -1,4 +1,4 @@
-package NormalCard
+package cardhandlers
 
 import (
 	"fmt"
