@@ -1,55 +1,54 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"lovelive-hd-ur/CardResponse"
-	NormalCard "lovelive-hd-ur/cardhandlers"
+	"lovelive-hd-ur/cardhandlers"
 	"net/http"
 	"net/url"
 	"os/exec"
 	"strconv"
-
-	"github.com/gin-gonic/gin"
 )
 
 var cardJobs = make(chan struct{}, 2)
 
-func root(ctx *gin.Context) {
-	lsOut, _ := exec.Command("ls").Output()
-
-	fmt.Fprint(ctx.Writer, string(lsOut))
-}
-
-func ggg(w http.ResponseWriter, r *http.Request) {
-	info, _ := ioutil.ReadFile("maruexcite.png")
-
-	w.Write(info)
-}
-
-func cards(w http.ResponseWriter, r *http.Request) {
+func LimitingMiddleware(c *gin.Context) {
 	select {
 	case cardJobs <- struct{}{}:
 		{
 			defer func() { <-cardJobs }()
-			fmt.Println("processing card")
+			c.Next()
 		}
 	default:
 		{
-			w.WriteHeader(500)
-			w.Write([]byte("Too many requests right now, try again later"))
-			fmt.Println("skipped request")
-			return
+			c.AbortWithStatus(503)
 		}
 	}
+}
+
+func root(ctx *gin.Context) {
+	lsOut, _ := exec.Command("ls").Output()
+
+	_, _ = fmt.Fprint(ctx.Writer, string(lsOut))
+}
+
+func maru(ctx *gin.Context) {
+	ctx.File("maruexcite.png")
+}
+
+func NormalCards(ctx *gin.Context) {
 	parsed, _ := url.Parse("https://schoolido.lu/api/cards/")
 	q := parsed.Query()
-	q.Add("ids", r.URL.Query().Get("ids"))
+	q.Add("ids", ctx.Query("id"))
 	parsed.RawQuery = q.Encode()
 	fmt.Println(parsed)
 	resp, err := http.Get(parsed.String())
 	if err != nil {
-
+		_ = ctx.AbortWithError(500, err)
+		return
 	}
 
 	defer resp.Body.Close()
@@ -57,28 +56,41 @@ func cards(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	cardResponse, _ := CardResponse.UnmarshalCardResponse(body)
 
-	card := NormalCard.New()
-
-	cardURL, _ := url.Parse(*cardResponse.Results[0].CleanUrIdolized)
-	card.CardUrl = *cardURL
-	card.FileBaseName = strconv.FormatInt(*cardResponse.Results[0].ID, 10) + ".png"
-
-	if err := card.ProcessCard(); err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
+	if cardResponse.Results[0].CleanUrIdolized == nil {
+		_ = ctx.AbortWithError(http.StatusNotFound, errors.New("card has no idolized ur"))
 		return
 	}
 
-	file, _ := ioutil.ReadFile(card.CardOutFile)
+	card := cardhandlers.NormalCard{
+		Waifu2xAble: cardhandlers.Waifu2xAble{
+			FileBaseName: strconv.FormatInt(*cardResponse.Results[0].ID, 10) + ".png",
+		},
+		BaseCard: cardResponse.Results[0],
+	}
 
-	w.WriteHeader(200)
-	w.Write(file)
+	if err := card.ProcessImage(); err != nil {
+		_ = ctx.AbortWithError(500, err)
+		return
+	}
+
+	ctx.File(card.Waifu2xAble.OutputDir())
 	return
+}
+
+func URPairs(c *gin.Context) {
+
 }
 
 func main() {
 	router := gin.Default()
-	router.GET("/", root)
+
+	router.GET("/list", root)
+	router.GET("/maru", maru)
+
+	imageHandling := router.Group("/")
+	imageHandling.Use(LimitingMiddleware)
+	imageHandling.GET("/", NormalCards)
+	imageHandling.GET("/urpair", URPairs)
 
 	router.Run("0.0.0.0:5005")
 	// http.HandleFunc("/", root)

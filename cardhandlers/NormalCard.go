@@ -1,28 +1,23 @@
 package cardhandlers
 
 import (
-	"fmt"
+	"errors"
 	"io/ioutil"
+	"lovelive-hd-ur/CardResponse"
 	"net/http"
-	"net/url"
 	"os"
-	"os/exec"
-	"path"
 )
 
 type NormalCard struct {
-	CardUrl      url.URL
-	FileBaseName string
-	CardInFile   string
-	CardOutFile  string
+	Waifu2xAble Waifu2xAble
+	BaseCard    CardResponse.Result
 }
 
-func New() *NormalCard {
-	return &NormalCard{}
-}
-
-func (card *NormalCard) WriteBaseCard() error {
-	cardData, err := http.Get("https:" + card.CardUrl.String())
+func (card *NormalCard) writeBaseCard() error {
+	if card.BaseCard.CleanUrIdolized == nil {
+		return errors.New("selected card has no UR")
+	}
+	cardData, err := http.Get("https:" + *card.BaseCard.CleanUrIdolized)
 	if err != nil {
 		return err
 	}
@@ -33,36 +28,15 @@ func (card *NormalCard) WriteBaseCard() error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(path.Join("cardsIn", card.FileBaseName), cardDataReader, os.ModePerm); err != nil {
+	if err := ioutil.WriteFile(card.Waifu2xAble.InputDir(), cardDataReader, os.ModePerm); err != nil {
 		return err
 	}
 
-	card.CardInFile = path.Join("cardsIn", card.FileBaseName)
 	return nil
 }
 
-func (card *NormalCard) DoWaifu2x() error {
-	file := path.Join("cardsOut", card.FileBaseName)
-	card.CardOutFile = file
-
-	waifu2xCmd := exec.Command("/usr/bin/waifu2x-converter-cpp", "-i", card.CardInFile, "-o", file, "--noise-level 3", "--scale-ratio 2")
-	waifu2xOut, _ := waifu2xCmd.Output()
-
-	fmt.Println(string(waifu2xOut))
-
-	_, err := os.Stat(file)
-	if os.IsNotExist(err) {
-		return err
-	}
-	return nil
-}
-
-func (card *NormalCard) ProcessCard() error {
-	if err := card.WriteBaseCard(); err != nil {
-		return err
-	}
-	if err := card.DoWaifu2x(); err != nil {
-		return err
-	}
-	return nil
+func (card *NormalCard) ProcessImage() (err error) {
+	err = card.writeBaseCard()
+	err = card.Waifu2xAble.DoWaifu2x()
+	return
 }

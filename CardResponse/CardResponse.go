@@ -100,9 +100,9 @@ type Idol struct {
 }
 
 type UrPair struct {
-	ReverseDisplayIdolized *bool `json:"reverse_display_idolized,omitempty"`
-	ReverseDisplay         *bool `json:"reverse_display,omitempty"`
-	Card                   *Card `json:"card,omitempty"`
+	ReverseDisplayIdolized *bool   `json:"reverse_display_idolized,omitempty"`
+	ReverseDisplay         *bool   `json:"reverse_display,omitempty"`
+	Card                   *Result `json:"card,omitempty"`
 }
 
 type Card struct {
