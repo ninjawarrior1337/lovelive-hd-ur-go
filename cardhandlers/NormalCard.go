@@ -11,6 +11,7 @@ import (
 type NormalCard struct {
 	Waifu2xAble Waifu2xAble
 	BaseCard    CardResponse.Result
+	idolized    bool
 }
 
 func (card *NormalCard) writeBaseCard() error {

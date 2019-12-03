@@ -15,6 +15,10 @@ import (
 
 var cardJobs = make(chan struct{}, 2)
 
+func selectRandomCard() (*CardResponse.Result, error) {
+
+}
+
 func LimitingMiddleware(c *gin.Context) {
 	select {
 	case cardJobs <- struct{}{}:
