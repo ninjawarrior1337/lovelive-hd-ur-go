@@ -15,8 +15,38 @@ import (
 
 var cardJobs = make(chan struct{}, 2)
 
-func selectRandomCard() (*CardResponse.Result, error) {
+func selectRandomCard(ctx *gin.Context) (*CardResponse.Result, error) {
+	parsed, err := url.Parse("https://schoolido.lu/api/cards/")
+	if err != nil {
+		return nil, err
+	}
+	q := parsed.Query()
+	q.Add("ids", ctx.Query("id"))
+	q.Add("ordering", "random")
+	parsed.RawQuery = q.Encode()
+	fmt.Println(parsed)
+	resp, err := http.Get(parsed.String())
+	if err != nil {
+		_ = ctx.AbortWithError(500, err)
+		return nil, err
+	}
+	defer resp.Body.Close()
 
+	body, _ := ioutil.ReadAll(resp.Body)
+	cardResponse, _ := CardResponse.UnmarshalCardResponse(body)
+
+	for _, card := range cardResponse.Results {
+		if card.CleanUr != nil {
+			return &card, nil
+		}
+	}
+
+	if cardResponse.Results[0].CleanUrIdolized == nil {
+		_ = ctx.AbortWithError(http.StatusNotFound, errors.New("card has no idolized ur"))
+		return nil, err
+	}
+
+	return &cardResponse.Results[0], nil
 }
 
 func LimitingMiddleware(c *gin.Context) {
@@ -44,27 +74,6 @@ func maru(ctx *gin.Context) {
 }
 
 func normalCards(ctx *gin.Context) {
-	parsed, _ := url.Parse("https://schoolido.lu/api/cards/")
-	q := parsed.Query()
-	q.Add("ids", ctx.Query("id"))
-	parsed.RawQuery = q.Encode()
-	fmt.Println(parsed)
-	resp, err := http.Get(parsed.String())
-	if err != nil {
-		_ = ctx.AbortWithError(500, err)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	cardResponse, _ := CardResponse.UnmarshalCardResponse(body)
-
-	if cardResponse.Results[0].CleanUrIdolized == nil {
-		_ = ctx.AbortWithError(http.StatusNotFound, errors.New("card has no idolized ur"))
-		return
-	}
-
 	card := cardhandlers.NormalCard{
 		Waifu2xAble: cardhandlers.Waifu2xAble{
 			FileBaseName: strconv.FormatInt(*cardResponse.Results[0].ID, 10) + ".png",
