@@ -39,7 +39,7 @@ func maru(ctx *gin.Context) {
 	ctx.File("maruexcite.png")
 }
 
-func NormalCards(ctx *gin.Context) {
+func normalCards(ctx *gin.Context) {
 	parsed, _ := url.Parse("https://schoolido.lu/api/cards/")
 	q := parsed.Query()
 	q.Add("ids", ctx.Query("id"))
@@ -77,7 +77,7 @@ func NormalCards(ctx *gin.Context) {
 	return
 }
 
-func URPairs(c *gin.Context) {
+func urPairs(c *gin.Context) {
 
 }
 
@@ -89,8 +89,8 @@ func main() {
 
 	imageHandling := router.Group("/")
 	imageHandling.Use(LimitingMiddleware)
-	imageHandling.GET("/", NormalCards)
-	imageHandling.GET("/urpair", URPairs)
+	imageHandling.GET("/", normalCards)
+	imageHandling.GET("/urpair", urPairs)
 
 	router.Run("0.0.0.0:5005")
 	// http.HandleFunc("/", root)
