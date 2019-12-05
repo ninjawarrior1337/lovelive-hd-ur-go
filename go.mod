@@ -1,4 +1,4 @@
-module lovelive-hd-ur
+module lovelive-hd-ur-go
 
 go 1.13
 
