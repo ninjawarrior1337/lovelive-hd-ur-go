@@ -1,4 +1,4 @@
-module lovelive-hd-ur-go
+module github.com/ninjawarrior1337/lovelive-hd-ur-go
 
 go 1.13
 
