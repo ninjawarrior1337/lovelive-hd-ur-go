@@ -3,7 +3,7 @@ package cardhandlers
 import (
 	"errors"
 	"io/ioutil"
-	"lovelive-hd-ur/CardResponse"
+	"github.com/ninjawarrior1337/lovelive-hd-ur-go/CardResponse"
 	"net/http"
 	"os"
 )
