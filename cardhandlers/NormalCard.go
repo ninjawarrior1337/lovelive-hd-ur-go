@@ -2,8 +2,8 @@ package cardhandlers
 
 import (
 	"errors"
-	"io/ioutil"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/CardResponse"
+	"io/ioutil"
 	"net/http"
 	"os"
 )
@@ -11,7 +11,7 @@ import (
 type NormalCard struct {
 	Waifu2xAble Waifu2xAble
 	BaseCard    CardResponse.Result
-	idolized    bool
+	Idolized    bool
 }
 
 func (card *NormalCard) writeBaseCard() error {

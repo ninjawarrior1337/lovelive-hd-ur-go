@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/CardResponse"
@@ -15,16 +14,26 @@ import (
 
 var cardJobs = make(chan struct{}, 2)
 
+func addToQueryIfNotExists(query *url.Values, param string, value string) {
+	if value != "" {
+		query.Add(param, value)
+	}
+}
+
 func selectRandomCard(ctx *gin.Context) (*CardResponse.Result, error) {
 	parsed, err := url.Parse("https://schoolido.lu/api/cards/")
 	if err != nil {
 		return nil, err
 	}
 	q := parsed.Query()
-	q.Add("ids", ctx.Query("id"))
 	q.Add("ordering", "random")
+	q.Add("expand_ur_pair", "true")
+	addToQueryIfNotExists(&q, "ids", ctx.DefaultQuery("id", ""))
+	addToQueryIfNotExists(&q, "school", ctx.DefaultQuery("school", "Otonokizaka Academy, Uranohoshi Girls' High School"))
+	addToQueryIfNotExists(&q, "rarity", ctx.DefaultQuery("rarity", "SSR,UR"))
 	parsed.RawQuery = q.Encode()
 	fmt.Println(parsed)
+
 	resp, err := http.Get(parsed.String())
 	if err != nil {
 		_ = ctx.AbortWithError(500, err)
@@ -34,17 +43,6 @@ func selectRandomCard(ctx *gin.Context) (*CardResponse.Result, error) {
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	cardResponse, _ := CardResponse.UnmarshalCardResponse(body)
-
-	for _, card := range cardResponse.Results {
-		if card.CleanUr != nil {
-			return &card, nil
-		}
-	}
-
-	if cardResponse.Results[0].CleanUrIdolized == nil {
-		_ = ctx.AbortWithError(http.StatusNotFound, errors.New("card has no idolized ur"))
-		return nil, err
-	}
 
 	return &cardResponse.Results[0], nil
 }
@@ -74,11 +72,17 @@ func maru(ctx *gin.Context) {
 }
 
 func normalCards(ctx *gin.Context) {
+	idolized, err := strconv.ParseBool(ctx.DefaultQuery("idolized", "true"))
+	cardResult, err := selectRandomCard(ctx)
+	if err != nil {
+		_ = ctx.AbortWithError(404, err)
+	}
 	card := cardhandlers.NormalCard{
 		Waifu2xAble: cardhandlers.Waifu2xAble{
-			FileBaseName: strconv.FormatInt(*cardResponse.Results[0].ID, 10) + ".png",
+			FileBaseName: strconv.FormatInt(*cardResult.ID, 10) + strconv.FormatBool(idolized) + ".png",
 		},
-		BaseCard: cardResponse.Results[0],
+		BaseCard: *cardResult,
+		Idolized: idolized,
 	}
 
 	if err := card.ProcessImage(); err != nil {
@@ -90,8 +94,28 @@ func normalCards(ctx *gin.Context) {
 	return
 }
 
-func urPairs(c *gin.Context) {
+func urPairs(ctx *gin.Context) {
+	idolized, err := strconv.ParseBool(ctx.DefaultQuery("idolized", "true"))
+	if err != nil {
+		_ = ctx.AbortWithError(500, err)
+	}
+	cardResult, err := selectRandomCard(ctx)
+	if err != nil {
+		_ = ctx.AbortWithError(404, err)
+	}
 
+	card := cardhandlers.URPair{
+		Waifu2xAble: cardhandlers.Waifu2xAble{},
+		BaseCard:    *cardResult,
+		Idolized:    idolized,
+	}
+
+	if err := card.ProcessImage(); err != nil {
+		_ = ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.File(card.Waifu2xAble.OutputDir())
 }
 
 func main() {

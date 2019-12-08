@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fogleman/gg"
-	"image"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/CardResponse"
+	"image"
 	"net/http"
 	"os"
 )
@@ -15,15 +15,26 @@ type URPair struct {
 	BaseCard    CardResponse.Result
 	image1      image.Image
 	image2      image.Image
-	idolized    bool
+	Idolized    bool
 }
 
 func (u *URPair) retrievePair() error {
-	if u.BaseCard.CleanUrIdolized == nil && u.BaseCard.UrPair.Card.CleanUrIdolized == nil {
+	var baseCardUrl *string
+	var pairCardUrl *string
+
+	if u.Idolized {
+		baseCardUrl = u.BaseCard.CleanUrIdolized
+		pairCardUrl = u.BaseCard.UrPair.Card.CleanUrIdolized
+	} else {
+		baseCardUrl = u.BaseCard.CleanUr
+		pairCardUrl = u.BaseCard.UrPair.Card.CleanUr
+	}
+
+	if baseCardUrl == nil && pairCardUrl == nil {
 		return errors.New("not a ur pair")
 	}
 
-	image1Data, err := http.Get("https:" + *u.BaseCard.CleanUrIdolized)
+	image1Data, err := http.Get("https:" + *baseCardUrl)
 	if err != nil {
 		return err
 	}
@@ -34,7 +45,7 @@ func (u *URPair) retrievePair() error {
 		return err
 	}
 
-	image2Data, err := http.Get("https:" + *u.BaseCard.UrPair.Card.CleanUrIdolized)
+	image2Data, err := http.Get("https:" + *pairCardUrl)
 	if err != nil {
 		return err
 	}
@@ -46,7 +57,7 @@ func (u *URPair) retrievePair() error {
 	}
 
 	//Set base name
-	u.Waifu2xAble.FileBaseName = fmt.Sprintf("%dx%d", *u.BaseCard.ID, *u.BaseCard.UrPair.Card.ID)
+	u.Waifu2xAble.FileBaseName = fmt.Sprintf("%dx%d%v.png", *u.BaseCard.ID, *u.BaseCard.UrPair.Card.ID, u.Idolized)
 
 	return nil
 }
@@ -58,10 +69,19 @@ func (u *URPair) stitchPairAndSave() error {
 
 	baseImage := gg.NewContext(u.image1.Bounds().Dx()+u.image2.Bounds().Dx(), u.image1.Bounds().Dy())
 
-	switch reverse := *u.BaseCard.UrPair.ReverseDisplayIdolized; reverse {
-	case true:
-		{
-			u.image1, u.image2 = u.image2, u.image1
+	if u.Idolized {
+		switch reverse := *u.BaseCard.UrPair.ReverseDisplayIdolized; reverse {
+		case true:
+			{
+				u.image1, u.image2 = u.image2, u.image1
+			}
+		}
+	} else {
+		switch reverse := *u.BaseCard.UrPair.ReverseDisplay; reverse {
+		case true:
+			{
+				u.image1, u.image2 = u.image2, u.image1
+			}
 		}
 	}
 
