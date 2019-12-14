@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fogleman/gg"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/CardResponse"
+	"golang.org/x/sync/errgroup"
 	"image"
 	"net/http"
 	"os"
@@ -19,6 +20,7 @@ type URPair struct {
 }
 
 func (u *URPair) retrievePair() error {
+	waiter := errgroup.Group{}
 	var baseCardUrl *string
 	var pairCardUrl *string
 
@@ -34,24 +36,35 @@ func (u *URPair) retrievePair() error {
 		return errors.New("not a ur pair")
 	}
 
-	image1Data, err := http.Get("https:" + *baseCardUrl)
-	if err != nil {
-		return err
-	}
-	defer image1Data.Body.Close()
+	waiter.Go(func() error {
+		image1Data, err := http.Get("https:" + *baseCardUrl)
+		if err != nil {
+			return err
+		}
+		defer image1Data.Body.Close()
 
-	u.image1, _, err = image.Decode(image1Data.Body)
-	if err != nil {
-		return err
-	}
+		u.image1, _, err = image.Decode(image1Data.Body)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 
-	image2Data, err := http.Get("https:" + *pairCardUrl)
-	if err != nil {
-		return err
-	}
-	defer image2Data.Body.Close()
+	waiter.Go(func() error {
+		image2Data, err := http.Get("https:" + *pairCardUrl)
+		if err != nil {
+			return err
+		}
+		defer image2Data.Body.Close()
 
-	u.image2, _, err = image.Decode(image2Data.Body)
+		u.image2, _, err = image.Decode(image2Data.Body)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	err := waiter.Wait()
 	if err != nil {
 		return err
 	}
@@ -97,7 +110,16 @@ func (u *URPair) stitchPairAndSave() error {
 
 func (u *URPair) ProcessImage() (err error) {
 	err = u.retrievePair()
+	if err != nil {
+		return
+	}
 	err = u.stitchPairAndSave()
-	err = u.Waifu2xAble.DoWaifu2x()
+	if err != nil {
+		return
+	}
+	//err = u.Waifu2xAble.DoWaifu2x()
+	//if err != nil {
+	//	return
+	//}
 	return
 }
