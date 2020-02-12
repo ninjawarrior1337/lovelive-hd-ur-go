@@ -1,7 +1,6 @@
 package cardhandlers
 
 import (
-	"errors"
 	"fmt"
 	"github.com/fogleman/gg"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/CardResponse"
@@ -12,11 +11,11 @@ import (
 )
 
 type URPair struct {
-	Waifu2xAble Waifu2xAble
-	BaseCard    CardResponse.Result
-	image1      image.Image
-	image2      image.Image
-	Idolized    bool
+	Waifu2xAble
+	BaseCard CardResponse.Result
+	image1   image.Image
+	image2   image.Image
+	Idolized bool
 }
 
 func (u *URPair) retrievePair() error {
@@ -24,17 +23,24 @@ func (u *URPair) retrievePair() error {
 	var baseCardUrl *string
 	var pairCardUrl *string
 
-	if u.Idolized {
+	switch u.Idolized {
+	case true:
 		baseCardUrl = u.BaseCard.CleanUrIdolized
 		pairCardUrl = u.BaseCard.UrPair.Card.CleanUrIdolized
-	} else {
+	case false:
 		baseCardUrl = u.BaseCard.CleanUr
 		pairCardUrl = u.BaseCard.UrPair.Card.CleanUr
 	}
 
-	if baseCardUrl == nil && pairCardUrl == nil {
-		return errors.New("not a ur pair")
+	if baseCardUrl == nil {
+		return &CardNotFoundError{*u.BaseCard.ID, u.Idolized}
 	}
+
+	if pairCardUrl == nil {
+		return &CardNotURPairError{*u.BaseCard.ID, u.Idolized}
+	}
+	//Set base name
+	u.FileBaseName = fmt.Sprintf("%dx%d%v.png", *u.BaseCard.ID, *u.BaseCard.UrPair.Card.ID, u.Idolized)
 
 	waiter.Go(func() error {
 		image1Data, err := http.Get("https:" + *baseCardUrl)
@@ -66,31 +72,29 @@ func (u *URPair) retrievePair() error {
 
 	err := waiter.Wait()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to obtain images: %s", err)
 	}
-
-	//Set base name
-	u.Waifu2xAble.FileBaseName = fmt.Sprintf("%dx%d%v.png", *u.BaseCard.ID, *u.BaseCard.UrPair.Card.ID, u.Idolized)
 
 	return nil
 }
 
 func (u *URPair) stitchPairAndSave() error {
-	if _, err := os.Stat(u.Waifu2xAble.InputDir()); err == nil {
-		return nil
+	if _, err := os.Stat(u.InputPath()); err == nil {
+		return err
 	}
 
 	baseImage := gg.NewContext(u.image1.Bounds().Dx()+u.image2.Bounds().Dx(), u.image1.Bounds().Dy())
 
-	if u.Idolized {
-		switch reverse := *u.BaseCard.UrPair.ReverseDisplayIdolized; reverse {
+	switch u.Idolized {
+	case true:
+		switch *u.BaseCard.UrPair.ReverseDisplayIdolized {
 		case true:
 			{
 				u.image1, u.image2 = u.image2, u.image1
 			}
 		}
-	} else {
-		switch reverse := *u.BaseCard.UrPair.ReverseDisplay; reverse {
+	case false:
+		switch *u.BaseCard.UrPair.ReverseDisplay {
 		case true:
 			{
 				u.image1, u.image2 = u.image2, u.image1
@@ -100,9 +104,9 @@ func (u *URPair) stitchPairAndSave() error {
 
 	baseImage.DrawImage(u.image1, 0, 0)
 	baseImage.DrawImage(u.image2, u.image1.Bounds().Dx(), 0)
-	err := baseImage.SavePNG(u.Waifu2xAble.OutputDir())
+	err := baseImage.SavePNG(u.InputPath())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to save image: %s", err)
 	}
 
 	return nil
@@ -117,9 +121,9 @@ func (u *URPair) ProcessImage() (err error) {
 	if err != nil {
 		return
 	}
-	//err = u.Waifu2xAble.DoWaifu2x()
-	//if err != nil {
-	//	return
-	//}
+	err = u.DoWaifu2x()
+	if err != nil {
+		return
+	}
 	return
 }

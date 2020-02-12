@@ -6,6 +6,7 @@ import (
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/CardResponse"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/cardhandlers"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os/exec"
@@ -32,7 +33,7 @@ func selectRandomCard(ctx *gin.Context) (*CardResponse.Result, error) {
 	addToQueryIfNotExists(&q, "school", ctx.DefaultQuery("school", "Otonokizaka Academy, Uranohoshi Girls' High School"))
 	addToQueryIfNotExists(&q, "rarity", ctx.DefaultQuery("rarity", "SSR,UR"))
 	parsed.RawQuery = q.Encode()
-	fmt.Println(parsed)
+	log.Println("Query URL: " + parsed.String())
 
 	resp, err := http.Get(parsed.String())
 	if err != nil {
@@ -87,10 +88,12 @@ func normalCards(ctx *gin.Context) {
 
 	if err := card.ProcessImage(); err != nil {
 		_ = ctx.AbortWithError(500, err)
+		ctx.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.File(card.Waifu2xAble.OutputDir())
+	ctx.Header("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", card.FileBaseName))
+	ctx.File(card.OutputPath())
 	return
 }
 
@@ -99,15 +102,15 @@ func urPairs(ctx *gin.Context) {
 	if err != nil {
 		_ = ctx.AbortWithError(500, err)
 	}
+
 	cardResult, err := selectRandomCard(ctx)
 	if err != nil {
 		_ = ctx.AbortWithError(404, err)
 	}
 
 	card := cardhandlers.URPair{
-		Waifu2xAble: cardhandlers.Waifu2xAble{},
-		BaseCard:    *cardResult,
-		Idolized:    idolized,
+		BaseCard: *cardResult,
+		Idolized: idolized,
 	}
 
 	if err := card.ProcessImage(); err != nil {
@@ -115,7 +118,8 @@ func urPairs(ctx *gin.Context) {
 		return
 	}
 
-	ctx.File(card.Waifu2xAble.OutputDir())
+	ctx.Header("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", card.FileBaseName))
+	ctx.File(card.OutputPath())
 }
 
 func main() {
@@ -129,7 +133,7 @@ func main() {
 	imageHandling.GET("/", normalCards)
 	imageHandling.GET("/urpair", urPairs)
 
-	router.Run("0.0.0.0:5005")
+	router.Run("0.0.0.0:3000")
 	// http.HandleFunc("/", root)
 	// http.HandleFunc("/ggg", ggg)
 	// http.HandleFunc("/cards", cards)
