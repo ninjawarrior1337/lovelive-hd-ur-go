@@ -4,7 +4,7 @@
 //    cardResponse, err := UnmarshalCardResponse(bytes)
 //    bytes, err = cardResponse.Marshal()
 
-package CardResponse
+package utils
 
 import "encoding/json"
 

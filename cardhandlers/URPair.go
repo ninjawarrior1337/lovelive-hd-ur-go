@@ -3,7 +3,7 @@ package cardhandlers
 import (
 	"fmt"
 	"github.com/fogleman/gg"
-	"github.com/ninjawarrior1337/lovelive-hd-ur-go/CardResponse"
+	"github.com/ninjawarrior1337/lovelive-hd-ur-go/utils"
 	"golang.org/x/sync/errgroup"
 	"image"
 	"net/http"
@@ -12,7 +12,7 @@ import (
 
 type URPair struct {
 	Waifu2xAble
-	BaseCard CardResponse.Result
+	BaseCard utils.Result
 	image1   image.Image
 	image2   image.Image
 	Idolized bool

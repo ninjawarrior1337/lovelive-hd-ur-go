@@ -1,7 +1,7 @@
 package cardhandlers
 
 import (
-	"github.com/ninjawarrior1337/lovelive-hd-ur-go/CardResponse"
+	"github.com/ninjawarrior1337/lovelive-hd-ur-go/utils"
 	"io"
 	"net/http"
 	"os"
@@ -9,7 +9,7 @@ import (
 
 type NormalCard struct {
 	Waifu2xAble
-	BaseCard CardResponse.Result
+	BaseCard utils.Result
 	Idolized bool
 }
 
