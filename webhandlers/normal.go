@@ -1,7 +1,7 @@
 package webhandlers
 
 import (
-	"github.com/gin-gonic/gin"
+	"fmt"
 	"github.com/gofiber/fiber"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/cardhandlers"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/utils"
@@ -29,10 +29,11 @@ func NormalCardHandler(ctx *fiber.Ctx) {
 
 	if err := card.ProcessImage(); err != nil {
 		ctx.SendStatus(500)
-		ctx.JSON(gin.H{"error": err.Error()})
+		ctx.JSON(map[string]string{"error": err.Error()})
 		return
 	}
 
-	ctx.Download(card.OutputPath(), card.FileBaseName)
+	ctx.Append("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", card.FileBaseName))
+	ctx.SendFile(card.OutputPath())
 	return
 }

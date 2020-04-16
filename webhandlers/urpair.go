@@ -1,6 +1,7 @@
 package webhandlers
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/cardhandlers"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/utils"
@@ -30,6 +31,6 @@ func UrPairHandler(ctx *fiber.Ctx) {
 		ctx.SendString(err.Error())
 		return
 	}
-
-	ctx.Download(card.OutputPath(), card.FileBaseName)
+	ctx.Append("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", card.FileBaseName))
+	ctx.SendFile(card.OutputPath())
 }
