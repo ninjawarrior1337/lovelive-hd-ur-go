@@ -1,7 +1,9 @@
 package webhandlers
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gofiber/fiber"
+)
 
-func PFPHandler(ctx *gin.Context) {
+func PFPHandler(ctx *fiber.Ctx) {
 
 }

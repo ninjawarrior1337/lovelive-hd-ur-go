@@ -14,11 +14,10 @@ func main() {
 
 	router.Get("/maru", maru)
 
-	imageHandling := router.Group("/")
-	imageHandling.Use(webhandlers.LimitingMiddleware)
-	imageHandling.Get("/", webhandlers.NormalCardHandler)
-	imageHandling.Get("/urpair", webhandlers.UrPairHandler)
-	imageHandling.Get("/pfp")
+	router.Use(webhandlers.LimitingMiddleware)
+	router.Get("/", webhandlers.NormalCardHandler)
+	router.Get("/urpair", webhandlers.UrPairHandler)
+	router.Get("/pfp", webhandlers.PFPHandler)
 
 	router.Listen("0.0.0.0:3000")
 }
