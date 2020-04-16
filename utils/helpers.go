@@ -1,12 +1,15 @@
 package utils
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 )
+
+var defaultSchools = "Otonokizaka Academy, Uranohoshi Girls' High School"
+var defaultRarities = "SSR,UR"
 
 func addToQueryIfNotExists(query *url.Values, param string, value string) {
 	if value != "" {
@@ -14,7 +17,7 @@ func addToQueryIfNotExists(query *url.Values, param string, value string) {
 	}
 }
 
-func SelectRandomCard(ctx *gin.Context) (*Result, error) {
+func SelectRandomCard(ctx *fiber.Ctx) (*Result, error) {
 	parsed, err := url.Parse("https://schoolido.lu/api/cards/")
 	if err != nil {
 		return nil, err
@@ -22,15 +25,26 @@ func SelectRandomCard(ctx *gin.Context) (*Result, error) {
 	q := parsed.Query()
 	q.Add("ordering", "random")
 	q.Add("expand_ur_pair", "true")
-	AddToQueryIfNotExists(&q, "ids", ctx.DefaultQuery("id", ""))
-	AddToQueryIfNotExists(&q, "school", ctx.DefaultQuery("school", "Otonokizaka Academy, Uranohoshi Girls' High School"))
-	AddToQueryIfNotExists(&q, "rarity", ctx.DefaultQuery("rarity", "SSR,UR"))
+	addToQueryIfNotExists(&q, "ids", ctx.Query("id"))
+	if school := ctx.Query("school"); school != "" {
+		addToQueryIfNotExists(&q, "school", school)
+	} else {
+		addToQueryIfNotExists(&q, "school", defaultSchools)
+	}
+
+	if rarity := ctx.Query("rarity"); rarity != "" {
+		addToQueryIfNotExists(&q, "rarity", rarity)
+	} else {
+		addToQueryIfNotExists(&q, "rarity", defaultRarities)
+	}
+
 	parsed.RawQuery = q.Encode()
 	log.Println("Query URL: " + parsed.String())
 
 	resp, err := http.Get(parsed.String())
 	if err != nil {
-		_ = ctx.AbortWithError(500, err)
+		ctx.Status(500)
+		ctx.SendString(err.Error())
 		return nil, err
 	}
 	defer resp.Body.Close()

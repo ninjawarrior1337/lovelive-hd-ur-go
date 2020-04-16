@@ -1,10 +1,12 @@
 package webhandlers
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gofiber/fiber"
+)
 
 var cardJobs = make(chan struct{}, 2)
 
-func LimitingMiddleware(c *gin.Context) {
+func LimitingMiddleware(c *fiber.Ctx) {
 	select {
 	case cardJobs <- struct{}{}:
 		{
@@ -13,7 +15,7 @@ func LimitingMiddleware(c *gin.Context) {
 		}
 	default:
 		{
-			c.AbortWithStatus(503)
+			c.Status(503)
 		}
 	}
 }

@@ -1,23 +1,23 @@
 package webhandlers
 
 import (
-	"fmt"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/cardhandlers"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/utils"
 	"net/http"
 	"strconv"
 )
 
-func UrPairHandler(ctx *gin.Context) {
-	idolized, err := strconv.ParseBool(ctx.DefaultQuery("idolized", "true"))
+func UrPairHandler(ctx *fiber.Ctx) {
+	idolized, err := strconv.ParseBool(ctx.Query("idolized"))
 	if err != nil {
-		_ = ctx.AbortWithError(500, err)
+		idolized = true
 	}
-
 	cardResult, err := utils.SelectRandomCard(ctx)
 	if err != nil {
-		_ = ctx.AbortWithError(404, err)
+		ctx.Status(404)
+		ctx.SendString("Failed to select card " + err.Error())
+		return
 	}
 
 	card := cardhandlers.URPair{
@@ -26,10 +26,10 @@ func UrPairHandler(ctx *gin.Context) {
 	}
 
 	if err := card.ProcessImage(); err != nil {
-		_ = ctx.AbortWithError(http.StatusInternalServerError, err)
+		ctx.Status(http.StatusInternalServerError)
+		ctx.SendString(err.Error())
 		return
 	}
 
-	ctx.Header("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", card.FileBaseName))
-	ctx.File(card.OutputPath())
+	ctx.Download(card.OutputPath(), card.FileBaseName)
 }

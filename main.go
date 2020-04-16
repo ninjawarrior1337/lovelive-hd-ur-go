@@ -1,24 +1,24 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/webhandlers"
 )
 
-func maru(ctx *gin.Context) {
-	ctx.File("maruexcite.png")
+func maru(ctx *fiber.Ctx) {
+	ctx.SendFile("maruexcite.png")
 }
 
 func main() {
-	router := gin.Default()
+	router := fiber.New()
 
-	router.GET("/maru", maru)
+	router.Get("/maru", maru)
 
 	imageHandling := router.Group("/")
 	imageHandling.Use(webhandlers.LimitingMiddleware)
-	imageHandling.GET("/", webhandlers.NormalCardHandler)
-	imageHandling.GET("/urpair", webhandlers.UrPairHandler)
-	imageHandling.GET("/pfp")
+	imageHandling.Get("/", webhandlers.NormalCardHandler)
+	imageHandling.Get("/urpair", webhandlers.UrPairHandler)
+	imageHandling.Get("/pfp")
 
-	router.Run("0.0.0.0:3000")
+	router.Listen("0.0.0.0:3000")
 }
