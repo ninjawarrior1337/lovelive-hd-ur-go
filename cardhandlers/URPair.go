@@ -23,6 +23,10 @@ func (u *URPair) retrievePair() error {
 	var baseCardUrl *string
 	var pairCardUrl *string
 
+	if u.BaseCard.UrPair == nil {
+		return fmt.Errorf("card with ID %v doesn't have a ur pair", *u.BaseCard.ID)
+	}
+
 	switch u.Idolized {
 	case true:
 		baseCardUrl = u.BaseCard.CleanUrIdolized
