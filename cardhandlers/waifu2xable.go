@@ -8,7 +8,6 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
-	"syscall"
 )
 
 type Waifu2xAble struct {
@@ -33,15 +32,8 @@ func (w *Waifu2xAble) DoWaifu2x() (err error) {
 	}
 	//Continue if it doesnt
 	var waifu2xCmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		var waifu2xArgs = []string{"-i", w.InputPath(), "-o", w.OutputPath(), "--noise_level", "3", "--scale_ratio", "2"}
-		waifu2xPath, _ := filepath.Abs("./waifu2xwin/waifu2x-caffe-cui.exe")
-		waifu2xCmd = exec.Command(waifu2xPath, waifu2xArgs...)
-		waifu2xCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	} else {
-		var waifu2xArgs = []string{"-i", w.InputPath(), "-o", w.OutputPath(), "--noise-level", "3", "--scale-ratio", "2"}
-		waifu2xCmd = exec.Command("/usr/bin/waifu2x-converter-cpp", waifu2xArgs...)
-	}
+
+	prepareWaifu2xCommand(waifu2xCmd, w.InputPath(), w.OutputPath())
 
 	log.Println("Conversion Command: " + waifu2xCmd.String())
 	waifu2xOut, err := waifu2xCmd.Output()
