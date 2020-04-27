@@ -1,14 +1,11 @@
-package cardhandlers
+package utils
 
 import "fmt"
 
-type CardNotFoundError struct {
-	cardId   int64
-	idolized bool
-}
+type CardNotFoundError struct{}
 
 func (e *CardNotFoundError) Error() string {
-	return fmt.Sprintf("Selected card: %v (Idolized?: %v) is not a valid card, please choose another one", e.cardId, e.idolized)
+	return "No valid card found either randomly or with your current query"
 }
 
 type CardNotURPairError struct {

@@ -20,12 +20,8 @@ type URPair struct {
 
 func (u *URPair) retrievePair() error {
 	waiter := errgroup.Group{}
-	var baseCardUrl *string
-	var pairCardUrl *string
-
-	if u.BaseCard.UrPair == nil {
-		return fmt.Errorf("card with ID %v doesn't have a ur pair", *u.BaseCard.ID)
-	}
+	var baseCardUrl string
+	var pairCardUrl string
 
 	switch u.Idolized {
 	case true:
@@ -35,19 +31,11 @@ func (u *URPair) retrievePair() error {
 		baseCardUrl = u.BaseCard.CleanUr
 		pairCardUrl = u.BaseCard.UrPair.Card.CleanUr
 	}
-
-	if baseCardUrl == nil {
-		return &CardNotFoundError{*u.BaseCard.ID, u.Idolized}
-	}
-
-	if pairCardUrl == nil {
-		return &CardNotURPairError{*u.BaseCard.ID, u.Idolized}
-	}
 	//Set base name
 	u.FileBaseName = fmt.Sprintf("%dx%d%v.png", *u.BaseCard.ID, *u.BaseCard.UrPair.Card.ID, u.Idolized)
 
 	waiter.Go(func() error {
-		image1Data, err := http.Get("https:" + *baseCardUrl)
+		image1Data, err := http.Get("https:" + baseCardUrl)
 		if err != nil {
 			return err
 		}
@@ -61,7 +49,7 @@ func (u *URPair) retrievePair() error {
 	})
 
 	waiter.Go(func() error {
-		image2Data, err := http.Get("https:" + *pairCardUrl)
+		image2Data, err := http.Get("https:" + pairCardUrl)
 		if err != nil {
 			return err
 		}

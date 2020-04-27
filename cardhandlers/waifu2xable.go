@@ -33,7 +33,11 @@ func (w *Waifu2xAble) DoWaifu2x() (err error) {
 	//Continue if it doesnt
 	var waifu2xCmd *exec.Cmd
 
-	prepareWaifu2xCommand(waifu2xCmd, w.InputPath(), w.OutputPath())
+	waifu2xCmd = prepareWaifu2xCommand(w.InputPath(), w.OutputPath())
+
+	if waifu2xCmd == nil {
+		return fmt.Errorf("what the frick just happened, I can only imageine that this is running on macOS")
+	}
 
 	log.Println("Conversion Command: " + waifu2xCmd.String())
 	waifu2xOut, err := waifu2xCmd.Output()

@@ -6,7 +6,7 @@ import (
 )
 
 func maru(ctx *fiber.Ctx) {
-	ctx.SendFile("maruexcite.png")
+	ctx.SendFile("./cardhandlers/maruexcite.png")
 }
 
 func main() {

@@ -6,15 +6,17 @@ import (
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/cardhandlers"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/utils"
 	"net/http"
-	"strconv"
 )
 
 func UrPairHandler(ctx *fiber.Ctx) {
-	idolized, err := strconv.ParseBool(ctx.Query("idolized"))
-	if err != nil {
-		idolized = true
+	idolized := utils.DetermineIdolizedFromQuery(ctx)
+	q := utils.CardQuery{
+		IDs:    ctx.Query("id"),
+		School: ctx.Query("school"),
+		Rarity: ctx.Query("rarity"),
+		Name:   ctx.Query("name"),
 	}
-	cardResult, err := utils.SelectRandomCard(ctx)
+	cardResult, err := utils.GetCard(q, idolized, true)
 	if err != nil {
 		ctx.Status(404)
 		ctx.SendString("Failed to select card " + err.Error())

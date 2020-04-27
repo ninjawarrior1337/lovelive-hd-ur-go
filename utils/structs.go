@@ -76,10 +76,10 @@ type Result struct {
 	IdolizedMaxLevel                  *int64        `json:"idolized_max_level,omitempty"`
 	TransparentImage                  *string       `json:"transparent_image"`
 	TransparentIdolizedImage          *string       `json:"transparent_idolized_image,omitempty"`
-	CleanUr                           *string       `json:"clean_ur"`
-	CleanUrIdolized                   *string       `json:"clean_ur_idolized,omitempty"`
+	CleanUr                           string        `json:"clean_ur"`
+	CleanUrIdolized                   string        `json:"clean_ur_idolized,omitempty"`
 	SkillUpCards                      []interface{} `json:"skill_up_cards"`
-	UrPair                            *UrPair       `json:"ur_pair"`
+	UrPair                            UrPair        `json:"ur_pair"`
 	TotalOwners                       *int64        `json:"total_owners,omitempty"`
 	TotalWishlist                     *int64        `json:"total_wishlist,omitempty"`
 	RankingAttribute                  *int64        `json:"ranking_attribute,omitempty"`
@@ -111,4 +111,11 @@ type Card struct {
 	RoundCardImage *string `json:"round_card_image,omitempty"`
 	ID             *int64  `json:"id,omitempty"`
 	Name           *string `json:"name,omitempty"`
+}
+
+type CardQuery struct {
+	IDs    string
+	School string
+	Rarity string
+	Name   string
 }

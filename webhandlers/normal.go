@@ -9,16 +9,20 @@ import (
 )
 
 func NormalCardHandler(ctx *fiber.Ctx) {
-	idolized, err := strconv.ParseBool(ctx.Query("idolized"))
-	if err != nil {
-		idolized = true
+	idolized := utils.DetermineIdolizedFromQuery(ctx)
+	q := utils.CardQuery{
+		IDs:    ctx.Query("id"),
+		School: ctx.Query("school"),
+		Rarity: ctx.Query("rarity"),
+		Name:   ctx.Query("name"),
 	}
-	cardResult, err := utils.SelectRandomCard(ctx)
+	cardResult, err := utils.GetCard(q, idolized, false)
 	if err != nil {
 		ctx.SendStatus(404)
-		ctx.SendString("Failed to select random card " + err.Error())
+		ctx.SendString("Failed to select card " + err.Error())
 		return
 	}
+
 	card := cardhandlers.NormalCard{
 		Waifu2xAble: cardhandlers.Waifu2xAble{
 			FileBaseName: strconv.FormatInt(*cardResult.ID, 10) + strconv.FormatBool(idolized) + ".png",

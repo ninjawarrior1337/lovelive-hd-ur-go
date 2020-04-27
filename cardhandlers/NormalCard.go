@@ -23,19 +23,13 @@ func (card *NormalCard) writeBaseCard() error {
 	switch card.Idolized {
 	case true:
 		var err error
-		if card.BaseCard.CleanUrIdolized == nil {
-			return &CardNotFoundError{*card.BaseCard.ID, card.Idolized}
-		}
-		cardData, err = http.Get("https:" + *card.BaseCard.CleanUrIdolized)
+		cardData, err = http.Get("https:" + card.BaseCard.CleanUrIdolized)
 		if err != nil {
 			return err
 		}
 	case false:
 		var err error
-		if card.BaseCard.CleanUr == nil {
-			return &CardNotFoundError{*card.BaseCard.ID, card.Idolized}
-		}
-		cardData, err = http.Get("https:" + *card.BaseCard.CleanUr)
+		cardData, err = http.Get("https:" + card.BaseCard.CleanUr)
 		if err != nil {
 			return err
 		}
