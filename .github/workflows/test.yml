@@ -11,10 +11,9 @@ jobs:
         uses: actions/setup-go@v2
 
       - name: Run Tests
-        run: go test -coverprofile=./lcov.info -covermode=count ./...
+        run: go test -race -coverprofile=./lcov.info -covermode=count ./...
 
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          path-to-lcov: ./lcov.info
+      - name: Codecov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: bash <(curl -s https://codecov.io/bash)
