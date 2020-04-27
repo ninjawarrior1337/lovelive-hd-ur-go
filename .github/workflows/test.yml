@@ -11,7 +11,7 @@ jobs:
         uses: actions/setup-go@v2
 
       - name: Run Tests
-        run: go test -race -coverprofile=./lcov.info -covermode=count ./...
+        run: go test -coverprofile=./lcov.info -covermode=count ./...
 
       - name: Codecov
         env:
