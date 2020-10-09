@@ -16,6 +16,7 @@ func main() {
 
 	router.Use(webhandlers.LimitingMiddleware)
 	router.Get("/", webhandlers.NormalCardHandler)
+	router.Post("/", webhandlers.GenericHandler)
 	router.Get("/urpair", webhandlers.UrPairHandler)
 	router.Get("/pfp", webhandlers.PFPHandler)
 

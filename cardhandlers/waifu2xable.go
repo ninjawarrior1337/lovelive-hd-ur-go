@@ -2,6 +2,7 @@ package cardhandlers
 
 import (
 	"fmt"
+	"image"
 	"log"
 	"os"
 	"os/exec"
@@ -11,6 +12,7 @@ import (
 )
 
 type Waifu2xAble struct {
+	image.Image
 	FileBaseName string
 }
 
@@ -26,11 +28,14 @@ func (w *Waifu2xAble) InputPath() string {
 
 func (w *Waifu2xAble) DoWaifu2x() (err error) {
 	// Check if file already exists
+
 	_, err = os.Stat(w.OutputPath())
 	if err == nil {
 		return
 	}
 	//Continue if it doesnt
+
+	// waifu2xCmd is defined by if the built file is for windows or linux.
 	var waifu2xCmd *exec.Cmd
 
 	waifu2xCmd = prepareWaifu2xCommand(w.InputPath(), w.OutputPath())
