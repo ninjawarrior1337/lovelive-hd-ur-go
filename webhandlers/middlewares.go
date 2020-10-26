@@ -1,12 +1,12 @@
 package webhandlers
 
 import (
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 )
 
 var cardJobs = make(chan struct{}, 2)
 
-func LimitingMiddleware(c *fiber.Ctx) {
+func LimitingMiddleware(c *fiber.Ctx) error {
 	select {
 	case cardJobs <- struct{}{}:
 		{
@@ -18,4 +18,5 @@ func LimitingMiddleware(c *fiber.Ctx) {
 			c.Status(503)
 		}
 	}
+	return nil
 }

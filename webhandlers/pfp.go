@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/disintegration/imaging"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/muesli/smartcrop"
 	"github.com/muesli/smartcrop/nfnt"
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/cardhandlers"
@@ -12,10 +12,9 @@ import (
 	"image"
 	"image/jpeg"
 	"os"
-	"strconv"
 )
 
-func PFPHandler(ctx *fiber.Ctx) {
+func PFPHandler(ctx *fiber.Ctx) error {
 	idolized := utils.DetermineIdolizedFromQuery(ctx)
 	q := utils.CardQuery{
 		IDs:    ctx.Query("id"),
@@ -25,23 +24,16 @@ func PFPHandler(ctx *fiber.Ctx) {
 	}
 	cardResult, err := utils.GetCard(q, idolized, false)
 	if err != nil {
-		ctx.SendStatus(404)
-		ctx.SendString("Failed to select card " + err.Error())
-		return
+		return err
 	}
 
 	card := cardhandlers.NormalCard{
-		Waifu2xAble: cardhandlers.Waifu2xAble{
-			FileBaseName: strconv.FormatInt(*cardResult.ID, 10) + strconv.FormatBool(idolized) + ".png",
-		},
 		BaseCard: *cardResult,
 		Idolized: idolized,
 	}
 
 	if err := card.ProcessImage(); err != nil {
-		ctx.SendStatus(500)
-		ctx.JSON(map[string]string{"error": err.Error()})
-		return
+		return err
 	}
 
 	f, _ := os.Open(card.OutputPath())
@@ -54,6 +46,8 @@ func PFPHandler(ctx *fiber.Ctx) {
 	var jpgBuff = new(bytes.Buffer)
 	jpeg.Encode(jpgBuff, croppedImg, nil)
 
-	ctx.Append("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", card.FileBaseName))
-	ctx.SendBytes(jpgBuff.Bytes())
+	ctx.Append("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", card.Hash()+card.Extension()))
+	ctx.Type(card.Extension())
+	ctx.Send(jpgBuff.Bytes())
+	return nil
 }

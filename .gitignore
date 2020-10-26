@@ -1,6 +1,7 @@
-cardsIn
-cardsOut
+imgIn/
+imgOut/
 .idea
 lovelive-hd-ur
 waifu2xwin
 *.exe
+*.run

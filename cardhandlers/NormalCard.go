@@ -2,9 +2,8 @@ package cardhandlers
 
 import (
 	"github.com/ninjawarrior1337/lovelive-hd-ur-go/utils"
-	"io"
+	"image"
 	"net/http"
-	"os"
 )
 
 type NormalCard struct {
@@ -14,11 +13,6 @@ type NormalCard struct {
 }
 
 func (card *NormalCard) writeBaseCard() error {
-	//Check if card already exists
-	if _, err := os.Stat(card.InputPath()); err == nil {
-		return nil
-	}
-	//If not, re-download
 	var cardData *http.Response
 	switch card.Idolized {
 	case true:
@@ -36,12 +30,12 @@ func (card *NormalCard) writeBaseCard() error {
 	}
 	defer cardData.Body.Close()
 
-	f, err := os.Create(card.InputPath())
+	i, _, err := image.Decode(cardData.Body)
 	if err != nil {
 		return err
 	}
 
-	_, _ = io.Copy(f, cardData.Body)
+	card.Image = i
 
 	return nil
 }
